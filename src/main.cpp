@@ -1,6 +1,7 @@
 #include <iostream>
-#include <SDL2/SDL.h>
 #include <string>
+#include <vector>
+#include <SDL2/SDL.h>
 #include <unistd.h>
 #include "../include/cleanup.h"
 #include "../include/statics.h"
@@ -9,11 +10,11 @@ using namespace std;
 
 extern int SCREEN_WIDTH;
 extern int SCREEN_HEIGHT;
-//                           {x, y}
 extern int SCREEN_CENTER[2];
 extern int FOV_RADIUS;
-
 extern int TILE_SIZE;
+
+std::vector<string> logoutput;
 
 class Player {
 public:
@@ -83,6 +84,10 @@ void renderSprite(SDL_Texture *tex, SDL_Renderer *ren, int srcx, int srcy, int x
 
 //Write out a message to the ingame user in the text output
 void write_player_message(string message) {
+    logoutput.push_back(message);
+}
+
+void render_game_log() {
 
 }
 
