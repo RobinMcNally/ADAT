@@ -27,13 +27,15 @@ extern int TOWER_HEIGHT;
 vector<string> logoutput;
 
 //Notation for this is [z][x][y]
-char gameworld[5][60][60];
+char gameworld[TOWER_HEIGHT][60][60];
 
 class Player {
 public:
 	bool hasmoved;
 	int xlocation;
 	int ylocation;
+	int currentfloor;
+	char playerWorld[TOWER_HEIGHT][60][60];
 };
 
 void assertptr(void *val, std::string ErrorText) {
@@ -46,7 +48,7 @@ void assertptr(void *val, std::string ErrorText) {
 
 void copyLevel(ifstream *levelfile, int currentfloor) {
 	string line;
-	
+
 	for (int i = 0; i < SCREEN_RADIUS * 2; i++) {
 		getline (*levelfile, line);
 		for (size_t j = 0; j < line.size(); j++) {
@@ -195,6 +197,48 @@ void render_game_log(SDL_Texture *tex, SDL_Renderer *ren) {
 //Basic euclidean distance
 double distance(int y1, int x1, int y2, int x2) {
 	return sqrt( abs( (int) (pow((y2 - y1), 2) + pow(x2 - x1, 2)) ) );
+}
+
+// void FOV()
+// {
+//   float x,y;
+//   int i;
+//   CLEAR_MAP_TO_NOT_VISIBLE();//Initially set all tiles to not visible.
+//   for(i=0;i<360;i++)
+//   {
+//     x=cos((float)i*0.01745f);
+//     y=sin((float)i*0.01745f);
+//     DoFov(x,y);
+//   };
+// };
+//
+// void DoFov(float x,float y)
+// {
+//
+// };
+void FOV () {
+	float x,y;
+	int i;
+	CLEAR_MAP_TO_NOT_VISIBLE();//Initially set all tiles to not visible.
+	for(i=0;i<360;i++) {
+		x=cos((float)i*0.01745f);
+		y=sin((float)i*0.01745f);
+		DoFov(x,y);
+	};
+
+}
+
+void DoFov(float x,float y) {
+	int i;
+	float ox,oy;
+	ox = (float)PLAYERX+0.5f;
+	oy = (float)PLAYERY+0.5f;
+	for(i=0;i<FOV_RADIUS;i++) {
+		playerWorld[][(int)ox][(int)oy]=VISIBLE;//Set the tile to visible.
+		if(MAP[(int)ox][(int)oy]==BLOCK) return;
+		ox+=x;
+		oy+=y;
+	};
 }
 
 int main(int, char**){
