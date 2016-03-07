@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <fstream>
 #include <SDL2/SDL.h>
 #include <unistd.h>
 #include "../include/cleanup.h"
@@ -21,7 +22,12 @@ extern int LOG_LOWER_LEFT[2];
 extern int UPPER_CHAR_START;
 extern int LOWER_CHAR_START;
 
+extern int TOWER_HEIGHT;
+
 vector<string> logoutput;
+
+//Notation for this is [z][x][y]
+char gameworld[5][60][60];
 
 class Player {
 public:
@@ -30,12 +36,69 @@ public:
 	int ylocation;
 };
 
-
 void assertptr(void *val, std::string ErrorText) {
 	if (val == nullptr) {
 		cout << ErrorText << SDL_GetError() << std::endl;
 		SDL_Quit();
 		exit(1);
+	}
+}
+
+void copyLevel(ifstream *levelfile, int currentfloor) {
+	string line;
+
+	for (int i = 0; i < SCREEN_RADIUS * 2; i++) {
+		getline (*levelfile, line);
+		for (size_t j = 0; j < line.size(); j++) {
+			gameworld[currentfloor][j][i] = line[j];
+		}
+	}
+}
+
+void skipLevel(ifstream *levelfile) {
+	string line;
+
+	for (int i = 0; i < SCREEN_RADIUS * 2; i++) {
+		getline (*levelfile, line);
+	}
+}
+
+void readworld() {
+	string line;
+	int floorcount;
+	int randomfloor = 0;
+	int parsedcount = 0;
+	int currentfloor = 0;
+
+	ifstream levelfile;
+	levelfile.open ("../res/levels.adatdun");
+	if (levelfile.is_open()) {
+		getline(levelfile, line);
+
+		//Super jank to the rescue
+		floorcount = stoi(line);
+		srand(time(NULL));
+		for (int i = 0; i < TOWER_HEIGHT; i++) {
+			randomfloor = rand() % floorcount;
+			while (parsedcount < floorcount) {
+				getline(levelfile, line);
+				//Scan through blank lines till we get one with something in it
+				while (line == "") {getline(levelfile, line);}
+				for (size_t i = 0; i < line.size(); i++) {
+					if (!isdigit(line[0])) {
+						cout << "Improper syntax in levels file\n" << line;
+					}
+				}
+				if (stoi(line) == randomfloor) {
+					copyLevel(&levelfile, currentfloor);
+				} else {
+					skipLevel(&levelfile);
+				}
+			}
+			levelfile.clear();
+			levelfile.seekg(0, ios::beg);
+			getline(levelfile, line);
+		}
 	}
 }
 
@@ -142,6 +205,8 @@ int main(int, char**){
 	SDL_Texture *spritesheet = loadTexture("res/adat_sprites.bmp", renderer);
 	SDL_Event event;
 
+	readworld();
+	
 	Player player;
 	player.xlocation = 14;
 	player.ylocation = 14;

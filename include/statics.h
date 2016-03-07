@@ -21,4 +21,6 @@ int LOG_LOWER_LEFT[2] = {61, 58};
 int UPPER_CHAR_START = 0;
 int LOWER_CHAR_START = 364;
 
+int TOWER_HEIGHT = 6;
+
 #endif
