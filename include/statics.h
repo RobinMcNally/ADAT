@@ -13,7 +13,12 @@ int FOV_RADIUS = 5;
 
 int TILE_SIZE = 14;
 
-int LOG_LINE_LENGTH = 10;
-int LOG_LINE_COUNT = 19;
+int LOG_LINE_LENGTH = 18;
+int LOG_LINE_COUNT = 18;
+int LOG_LOWER_LEFT[2] = {61, 58};
+
+
+int UPPER_CHAR_START = 0;
+int LOWER_CHAR_START = 364;
 
 #endif

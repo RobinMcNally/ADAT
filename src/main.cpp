@@ -15,8 +15,13 @@ extern int FOV_RADIUS;
 extern int TILE_SIZE;
 
 extern int LOG_LINE_LENGTH;
+extern int LOG_LINE_COUNT;
+extern int LOG_LOWER_LEFT[2];
 
-std::vector<string> logoutput;
+extern int UPPER_CHAR_START;
+extern int LOWER_CHAR_START;
+
+vector<string> logoutput;
 
 class Player {
 public:
@@ -28,7 +33,7 @@ public:
 
 void assertptr(void *val, std::string ErrorText) {
 	if (val == nullptr) {
-		std::cout << ErrorText << SDL_GetError() << std::endl;
+		cout << ErrorText << SDL_GetError() << std::endl;
 		SDL_Quit();
 		exit(1);
 	}
@@ -89,15 +94,27 @@ void write_player_message(string message) {
 	logoutput.push_back(message);
 }
 
-void render_game_log() {
+void render_game_log(SDL_Texture *tex, SDL_Renderer *ren) {
 	int line = 0;
+	int current_line_position = 0;
+	int location;
 
-	for (std::vector<string>::iterator rit = logoutput.rbegin(); rit != logoutput.rend(); ++rit) {
+	for (vector<string>::reverse_iterator rit = logoutput.rbegin(); rit != logoutput.rend(); ++rit) {
 		if (line > LOG_LINE_COUNT) break;
-		if (*rit.size() > LOG_LINE_LENGTH) {
+		if ((*rit).size() > (uint)LOG_LINE_LENGTH) {
 			//Handle multiline comment later
 		} else {
-
+			current_line_position = 0;
+			for (string::iterator sit = (*rit).begin(); sit != (*rit).end(); ++sit) {
+				if(isupper(*sit)) {
+					location = *sit - 65;
+					renderSprite(tex, ren, location * TILE_SIZE + UPPER_CHAR_START, 0, LOG_LOWER_LEFT[0] * TILE_SIZE + (current_line_position++ * TILE_SIZE), LOG_LOWER_LEFT[1] * TILE_SIZE - (line * TILE_SIZE));
+				} else if (islower(*sit))  {
+					location = *sit - 97;
+					renderSprite(tex, ren, location * TILE_SIZE + LOWER_CHAR_START, 0, LOG_LOWER_LEFT[0] * TILE_SIZE + (current_line_position++ * TILE_SIZE), LOG_LOWER_LEFT[1] * TILE_SIZE - (line * TILE_SIZE));
+				}
+				//Only characters for now
+			}
 		}
 		line++;
 	}
@@ -132,6 +149,9 @@ int main(int, char**){
 	int quit = 0;
 	//Main game loop
 
+	write_player_message(string("Hello"));
+	write_player_message(string("How"));
+	write_player_message(string("Are"));
 	while(!quit) {
 		//First clear the renderer
 		SDL_RenderClear(renderer);
@@ -171,6 +191,7 @@ int main(int, char**){
 			} while (SDL_PollEvent(&event));
 		renderTexture(background, renderer, 0, 0);
 		renderSprite(spritesheet, renderer, (5 * TILE_SIZE), (5 * TILE_SIZE), (player.xlocation * TILE_SIZE), (player.ylocation * TILE_SIZE));
+		render_game_log(spritesheet, renderer);
 		//Update the screen
 		SDL_RenderPresent(renderer);
 		//Take a quick break after all that hard work
