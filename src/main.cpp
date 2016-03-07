@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include <fstream>
+#include <set>
 #include <SDL2/SDL.h>
 #include <unistd.h>
 #include "../include/cleanup.h"
@@ -30,6 +31,20 @@ extern int FLOOR_SPRITE_OFFSET;
 extern int DOOR_SPRITE_OFFSET;
 
 extern int TOWER_HEIGHT;
+
+char const * IMPASSIBLE_TERRAIN = "=#";
+
+enum directions {
+	NORTH = 8,
+	SOUTH = 2,
+	EAST = 6,
+	WEST = 4,
+	NE = 9,
+	NW = 7,
+	SE = 3,
+	SW = 1,
+	STILL = 5
+};
 
 vector<string> logoutput;
 
@@ -196,7 +211,7 @@ void render_sprite(SDL_Texture *tex, SDL_Renderer *ren, int srcx, int srcy, int 
 }
 
 //Write out a message to the ingame user in the text output
-void write_player_message(string message) {
+void add_to_log(string message) {
 	logoutput.push_back(message);
 }
 
@@ -237,6 +252,8 @@ void do_fov(float x,float y, Player *player) {
 	ox = (float)player->xlocation+0.5f;
 	oy = (float)player->ylocation+0.5f;
 	for(i=0;i<FOV_RADIUS;i++) {
+		if ((int)ox < 0 || (int)ox > 59) continue;
+		if ((int)oy < 0 || (int)oy > 59) continue;
 		player->playerWorld[player->currentfloor][(int)ox][(int)oy] = gameworld[player->currentfloor][(int)ox][(int)oy];
 		player->playerColorMesh[(int)ox][(int)oy] = 1;
 		if(gameworld[player->currentfloor][(int)ox][(int)oy]=='#') return;
@@ -289,6 +306,92 @@ void render_player_world(SDL_Texture *tex, SDL_Renderer *ren, Player *player) {
 	}
 }
 
+bool try_action(int action, Player *player) {
+	set<char> chars;
+	int player_offset[2] = {0, 0};
+	chars.insert(IMPASSIBLE_TERRAIN, IMPASSIBLE_TERRAIN + strlen(IMPASSIBLE_TERRAIN));
+
+	switch (action) {
+		case NORTH:
+			player_offset[1]--;
+			break;
+		case SOUTH:
+			player_offset[1]++;
+			break;
+		case EAST:
+			player_offset[0]++;
+			break;
+		case WEST:
+			player_offset[0]--;
+			break;
+		case NE:
+			player_offset[0]++;
+			player_offset[1]--;
+			break;
+		case NW:
+			player_offset[0]--;
+			player_offset[1]--;
+			break;
+		case SE:
+			player_offset[0]++;
+			player_offset[1]++;
+			break;
+		case SW:
+			player_offset[0]--;
+			player_offset[1]++;
+			break;
+		case STILL:
+			break;
+		default:
+			break;
+	}
+	if (chars.find(gameworld[player->currentfloor][player->xlocation + player_offset[0]][player->ylocation + player_offset[1]]) != chars.end())  {
+		add_to_log(string("Bump!"));
+		return false;
+	} else {
+		player->xlocation += player_offset[0];
+		player->ylocation += player_offset[1];
+		return true;
+	}
+}
+
+void handle_keypress(Player *player, SDL_Event event) {
+	switch(event.key.keysym.sym) {
+		case SDLK_LEFT:
+		case SDLK_KP_4:
+			try_action(WEST, player);
+			break;
+		case SDLK_RIGHT:
+		case SDLK_KP_6:
+			try_action(EAST, player);
+			break;
+		case SDLK_UP:
+		case SDLK_KP_8:
+			try_action(NORTH, player);
+			break;
+		case SDLK_DOWN:
+		case SDLK_KP_2:
+			try_action(SOUTH, player);
+			break;
+		case SDLK_KP_9:
+			try_action(NE, player);
+			break;
+		case SDLK_KP_7:
+			try_action(NW, player);
+			break;
+		case SDLK_KP_3:
+			try_action(SE, player);
+			break;
+		case SDLK_KP_1:
+			try_action(SW, player);
+			break;
+		case SDLK_KP_5:
+			try_action(STILL, player);
+			break;
+		default:
+		break;
+	}
+}
 
 
 int main(int, char**){
@@ -319,9 +422,9 @@ int main(int, char**){
 	int quit = 0;
 	//Main game loop
 
-	write_player_message(string("Hello"));
-	write_player_message(string("How"));
-	write_player_message(string("Are"));
+	add_to_log(string("Hello"));
+	add_to_log(string("How"));
+	add_to_log(string("Are"));
 	while(!quit) {
 		//First clear the renderer
 		SDL_RenderClear(renderer);
@@ -334,29 +437,10 @@ int main(int, char**){
 					quit = 1;
 					break;
 					case SDL_KEYDOWN:
-					switch(event.key.keysym.sym) {
-						case SDLK_LEFT:
-						case SDLK_KP_4:
-							player.xlocation--;
-							break;
-						case SDLK_RIGHT:
-						case SDLK_KP_6:
-							player.xlocation++;
-							break;
-						case SDLK_UP:
-						case SDLK_KP_8:
-							player.ylocation--;
-							break;
-						case SDLK_DOWN:
-						case SDLK_KP_2:
-							player.ylocation++;
-							break;
-						default:
+						handle_keypress(&player, event);
 						break;
-					}
-					break;
-						default:
-					break;
+					default:
+						break;
 				}
 			} while (SDL_PollEvent(&event));
 

@@ -27,6 +27,7 @@ int WALL_SPRITE_OFFSET = 0;
 int FLOOR_SPRITE_OFFSET = 14;
 int DOOR_SPRITE_OFFSET = 28;
 
+
 int TOWER_HEIGHT = 6;
 
 #endif
