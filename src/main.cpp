@@ -46,7 +46,7 @@ void assertptr(void *val, std::string ErrorText) {
 
 void copyLevel(ifstream *levelfile, int currentfloor) {
 	string line;
-
+	
 	for (int i = 0; i < SCREEN_RADIUS * 2; i++) {
 		getline (*levelfile, line);
 		for (size_t j = 0; j < line.size(); j++) {
@@ -63,6 +63,16 @@ void skipLevel(ifstream *levelfile) {
 	}
 }
 
+void skipWhitespace(ifstream *levelfile) {
+	string line = "";
+	while (line == "") {
+		getline(levelfile, line);
+		if (line[0] == "*") {
+			line = "";
+		}
+	}
+}
+
 void readworld() {
 	string line;
 	int floorcount;
@@ -73,7 +83,7 @@ void readworld() {
 	ifstream levelfile;
 	levelfile.open ("../res/levels.adatdun");
 	if (levelfile.is_open()) {
-		getline(levelfile, line);
+		line = skipWhitespace(levelfile);
 
 		//Super jank to the rescue
 		floorcount = stoi(line);
@@ -81,9 +91,8 @@ void readworld() {
 		for (int i = 0; i < TOWER_HEIGHT; i++) {
 			randomfloor = rand() % floorcount;
 			while (parsedcount < floorcount) {
-				getline(levelfile, line);
-				//Scan through blank lines till we get one with something in it
-				while (line == "") {getline(levelfile, line);}
+				//Scan through blank lines (or ones with comments) till we get one with something in it
+				line = skipWhitespace(levelfile);
 				for (size_t i = 0; i < line.size(); i++) {
 					if (!isdigit(line[0])) {
 						cout << "Improper syntax in levels file\n" << line;
@@ -206,7 +215,7 @@ int main(int, char**){
 	SDL_Event event;
 
 	readworld();
-	
+
 	Player player;
 	player.xlocation = 14;
 	player.ylocation = 14;
