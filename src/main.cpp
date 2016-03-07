@@ -22,12 +22,22 @@ extern int LOG_LOWER_LEFT[2];
 extern int UPPER_CHAR_START;
 extern int LOWER_CHAR_START;
 
+extern int DARK_SPRITE_Y_START;
+extern int LIGHT_SPRITE_Y_START;
+
+extern int WALL_SPRITE_OFFSET;
+extern int FLOOR_SPRITE_OFFSET;
+extern int DOOR_SPRITE_OFFSET;
+
 extern int TOWER_HEIGHT;
 
 vector<string> logoutput;
 
 //Notation for this is [z][x][y]
-char gameworld[TOWER_HEIGHT][60][60];
+
+
+//Tower height is 6
+char gameworld[6][60][60];
 
 class Player {
 public:
@@ -35,8 +45,27 @@ public:
 	int xlocation;
 	int ylocation;
 	int currentfloor;
-	char playerWorld[TOWER_HEIGHT][60][60];
+	char playerWorld[6][60][60];
+	int playerColorMesh[60][60];
 };
+
+void initialize_player_world(Player *player) {
+	for (size_t i = 0; i < 6; i++) {
+		for (size_t j = 0; j < 60; j++) {
+			for (size_t k = 0; k < 60; k++) {
+				player->playerWorld[i][j][k] = '=';
+			}
+		}
+	}
+}
+
+void clear_color_mesh(Player *player) {
+	for (size_t i = 0; i < 60; i++) {
+		for (size_t j = 0; j < 60; j++) {
+			player->playerColorMesh[i][j] = 0;
+		}
+	}
+}
 
 void assertptr(void *val, std::string ErrorText) {
 	if (val == nullptr) {
@@ -46,7 +75,7 @@ void assertptr(void *val, std::string ErrorText) {
 	}
 }
 
-void copyLevel(ifstream *levelfile, int currentfloor) {
+void copy_level(ifstream *levelfile, int currentfloor) {
 	string line;
 
 	for (int i = 0; i < SCREEN_RADIUS * 2; i++) {
@@ -57,7 +86,7 @@ void copyLevel(ifstream *levelfile, int currentfloor) {
 	}
 }
 
-void skipLevel(ifstream *levelfile) {
+void skip_level(ifstream *levelfile) {
 	string line;
 
 	for (int i = 0; i < SCREEN_RADIUS * 2; i++) {
@@ -65,27 +94,27 @@ void skipLevel(ifstream *levelfile) {
 	}
 }
 
-void skipWhitespace(ifstream *levelfile) {
+string skip_whitespace(ifstream *levelfile) {
 	string line = "";
 	while (line == "") {
-		getline(levelfile, line);
-		if (line[0] == "*") {
+		getline(*levelfile, line);
+		if (line[0] == '*') {
 			line = "";
 		}
 	}
+	return line;
 }
 
-void readworld() {
+void read_world() {
 	string line;
 	int floorcount;
 	int randomfloor = 0;
 	int parsedcount = 0;
 	int currentfloor = 0;
 
-	ifstream levelfile;
-	levelfile.open ("../res/levels.adatdun");
+	ifstream levelfile("res/levels.txt");
 	if (levelfile.is_open()) {
-		line = skipWhitespace(levelfile);
+		line = skip_whitespace(&levelfile);
 
 		//Super jank to the rescue
 		floorcount = stoi(line);
@@ -94,22 +123,25 @@ void readworld() {
 			randomfloor = rand() % floorcount;
 			while (parsedcount < floorcount) {
 				//Scan through blank lines (or ones with comments) till we get one with something in it
-				line = skipWhitespace(levelfile);
+				line = skip_whitespace(&levelfile);
 				for (size_t i = 0; i < line.size(); i++) {
 					if (!isdigit(line[0])) {
 						cout << "Improper syntax in levels file\n" << line;
 					}
 				}
 				if (stoi(line) == randomfloor) {
-					copyLevel(&levelfile, currentfloor);
+					copy_level(&levelfile, currentfloor);
 				} else {
-					skipLevel(&levelfile);
+					skip_level(&levelfile);
 				}
+				parsedcount++;
 			}
 			levelfile.clear();
 			levelfile.seekg(0, ios::beg);
 			getline(levelfile, line);
 		}
+		levelfile.close();
+		cout << "hi\n";
 	}
 }
 
@@ -117,7 +149,7 @@ void logSDLError(std::ostream &os, const std::string &msg){
 	os << msg << " error: " << SDL_GetError() << std::endl;
 }
 
-SDL_Texture* loadTexture(const std::string &file, SDL_Renderer *ren){
+SDL_Texture* load_texture(const std::string &file, SDL_Renderer *ren){
 
 	SDL_Texture *texture = nullptr;
 
@@ -138,7 +170,7 @@ SDL_Texture* loadTexture(const std::string &file, SDL_Renderer *ren){
 	return texture;
 }
 
-void renderTexture(SDL_Texture *tex, SDL_Renderer *ren, int x, int y){
+void render_texture(SDL_Texture *tex, SDL_Renderer *ren, int x, int y){
 	SDL_Rect destination;
 	destination.x = x;
 	destination.y = y;
@@ -146,7 +178,7 @@ void renderTexture(SDL_Texture *tex, SDL_Renderer *ren, int x, int y){
 	SDL_RenderCopy(ren, tex, NULL, &destination);
 }
 
-void renderSprite(SDL_Texture *tex, SDL_Renderer *ren, int srcx, int srcy, int x, int y) {
+void render_sprite(SDL_Texture *tex, SDL_Renderer *ren, int srcx, int srcy, int x, int y) {
 
 	SDL_Rect source;
 	source.x = srcx;
@@ -182,10 +214,10 @@ void render_game_log(SDL_Texture *tex, SDL_Renderer *ren) {
 			for (string::iterator sit = (*rit).begin(); sit != (*rit).end(); ++sit) {
 				if(isupper(*sit)) {
 					location = *sit - 65;
-					renderSprite(tex, ren, location * TILE_SIZE + UPPER_CHAR_START, 0, LOG_LOWER_LEFT[0] * TILE_SIZE + (current_line_position++ * TILE_SIZE), LOG_LOWER_LEFT[1] * TILE_SIZE - (line * TILE_SIZE));
+					render_sprite(tex, ren, location * TILE_SIZE + UPPER_CHAR_START, 0, LOG_LOWER_LEFT[0] * TILE_SIZE + (current_line_position++ * TILE_SIZE), LOG_LOWER_LEFT[1] * TILE_SIZE - (line * TILE_SIZE));
 				} else if (islower(*sit))  {
 					location = *sit - 97;
-					renderSprite(tex, ren, location * TILE_SIZE + LOWER_CHAR_START, 0, LOG_LOWER_LEFT[0] * TILE_SIZE + (current_line_position++ * TILE_SIZE), LOG_LOWER_LEFT[1] * TILE_SIZE - (line * TILE_SIZE));
+					render_sprite(tex, ren, location * TILE_SIZE + LOWER_CHAR_START, 0, LOG_LOWER_LEFT[0] * TILE_SIZE + (current_line_position++ * TILE_SIZE), LOG_LOWER_LEFT[1] * TILE_SIZE - (line * TILE_SIZE));
 				}
 				//Only characters for now
 			}
@@ -199,47 +231,65 @@ double distance(int y1, int x1, int y2, int x2) {
 	return sqrt( abs( (int) (pow((y2 - y1), 2) + pow(x2 - x1, 2)) ) );
 }
 
-// void FOV()
-// {
-//   float x,y;
-//   int i;
-//   CLEAR_MAP_TO_NOT_VISIBLE();//Initially set all tiles to not visible.
-//   for(i=0;i<360;i++)
-//   {
-//     x=cos((float)i*0.01745f);
-//     y=sin((float)i*0.01745f);
-//     DoFov(x,y);
-//   };
-// };
-//
-// void DoFov(float x,float y)
-// {
-//
-// };
-void FOV () {
+void do_fov(float x,float y, Player *player) {
+	int i;
+	float ox,oy;
+	ox = (float)player->xlocation+0.5f;
+	oy = (float)player->ylocation+0.5f;
+	for(i=0;i<FOV_RADIUS;i++) {
+		player->playerWorld[player->currentfloor][(int)ox][(int)oy] = gameworld[player->currentfloor][(int)ox][(int)oy];
+		player->playerColorMesh[(int)ox][(int)oy] = 1;
+		if(gameworld[player->currentfloor][(int)ox][(int)oy]=='#') return;
+		ox += x;
+		oy += y;
+	};
+}
+
+void FOV (Player *player) {
 	float x,y;
 	int i;
-	CLEAR_MAP_TO_NOT_VISIBLE();//Initially set all tiles to not visible.
+	clear_color_mesh(player);
 	for(i=0;i<360;i++) {
 		x=cos((float)i*0.01745f);
 		y=sin((float)i*0.01745f);
-		DoFov(x,y);
+		do_fov(x,y,player);
 	};
 
 }
 
-void DoFov(float x,float y) {
-	int i;
-	float ox,oy;
-	ox = (float)PLAYERX+0.5f;
-	oy = (float)PLAYERY+0.5f;
-	for(i=0;i<FOV_RADIUS;i++) {
-		playerWorld[][(int)ox][(int)oy]=VISIBLE;//Set the tile to visible.
-		if(MAP[(int)ox][(int)oy]==BLOCK) return;
-		ox+=x;
-		oy+=y;
-	};
+
+void render_player_world(SDL_Texture *tex, SDL_Renderer *ren, Player *player) {
+	int offset;
+	for (size_t i = 0; i < 60; i++) {
+		for (size_t j = 0; j < 60; j++) {
+			if (player->playerWorld[player->currentfloor][j][i] != '=') {
+				//render bright tiles
+				if (player->playerColorMesh[j][i] == 1) {
+					offset = LIGHT_SPRITE_Y_START;
+				} else {
+					offset = DARK_SPRITE_Y_START;
+				}
+				switch (player->playerWorld[player->currentfloor][j][i]) {
+					case '#':
+						//Render wall
+						render_sprite(tex, ren, WALL_SPRITE_OFFSET, offset, j * TILE_SIZE, i * TILE_SIZE);
+						break;
+					case '.':
+						render_sprite(tex, ren, FLOOR_SPRITE_OFFSET, offset, j * TILE_SIZE, i * TILE_SIZE);
+						break;
+					case '+':
+						render_sprite(tex, ren, DOOR_SPRITE_OFFSET, offset, j * TILE_SIZE, i * TILE_SIZE);
+						break;
+					default:
+						render_sprite(tex, ren, WALL_SPRITE_OFFSET, offset, j * TILE_SIZE, i * TILE_SIZE);
+						break;
+				}
+			}
+		}
+	}
 }
+
+
 
 int main(int, char**){
 
@@ -254,16 +304,18 @@ int main(int, char**){
 	SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 	assertptr(renderer, "SDL_CreateRenderer Error: ");
 
-	SDL_Texture *background = loadTexture("res/adat_layout.bmp", renderer);
-	SDL_Texture *spritesheet = loadTexture("res/adat_sprites.bmp", renderer);
+	SDL_Texture *background = load_texture("res/adat_layout.bmp", renderer);
+	SDL_Texture *spritesheet = load_texture("res/adat_sprites.bmp", renderer);
 	SDL_Event event;
 
-	readworld();
+	read_world();
 
 	Player player;
 	player.xlocation = 14;
 	player.ylocation = 14;
 	player.hasmoved = false;
+	player.currentfloor = 0;
+	initialize_player_world(&player);
 	int quit = 0;
 	//Main game loop
 
@@ -307,9 +359,16 @@ int main(int, char**){
 					break;
 				}
 			} while (SDL_PollEvent(&event));
-		renderTexture(background, renderer, 0, 0);
-		renderSprite(spritesheet, renderer, (5 * TILE_SIZE), (5 * TILE_SIZE), (player.xlocation * TILE_SIZE), (player.ylocation * TILE_SIZE));
+
+		//Generate player field of view
+		FOV(&player);
+		render_texture(background, renderer, 0, 0);
 		render_game_log(spritesheet, renderer);
+
+		//Render world
+		render_player_world(spritesheet, renderer, &player);
+		//Render player character last
+		render_sprite(spritesheet, renderer, (5 * TILE_SIZE), (5 * TILE_SIZE), (player.xlocation * TILE_SIZE), (player.ylocation * TILE_SIZE));
 		//Update the screen
 		SDL_RenderPresent(renderer);
 		//Take a quick break after all that hard work
