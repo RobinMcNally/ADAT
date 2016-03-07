@@ -48,9 +48,7 @@ enum directions {
 
 vector<string> logoutput;
 
-//Notation for this is [z][x][y]
-
-
+//Notation for this file is [z][x][y] or [x][y] for two dimensional arrays
 //Tower height is 6
 char gameworld[6][60][60];
 
@@ -60,28 +58,35 @@ public:
 	int xlocation;
 	int ylocation;
 	int currentfloor;
-	char playerWorld[6][60][60];
-	int playerColorMesh[60][60];
+	char world[6][60][60];
+	int color_mesh[60][60];
+	void initialize_player_world();
+	void clear_color_mesh();
 };
 
-void initialize_player_world(Player *player) {
+// Initialize the player world to the default nonrendered character ('=')
+void Player::initialize_player_world() {
 	for (size_t i = 0; i < 6; i++) {
 		for (size_t j = 0; j < 60; j++) {
 			for (size_t k = 0; k < 60; k++) {
-				player->playerWorld[i][j][k] = '=';
+				world[i][j][k] = '=';
 			}
 		}
 	}
 }
 
-void clear_color_mesh(Player *player) {
+// Set the color mesh to zero
+// This will be called each move so we should probably streamline it
+// O(n^2) is a bit much for each time
+void Player::clear_color_mesh() {
 	for (size_t i = 0; i < 60; i++) {
 		for (size_t j = 0; j < 60; j++) {
-			player->playerColorMesh[i][j] = 0;
+			color_mesh[i][j] = 0;
 		}
 	}
 }
 
+// An assertation function that fails on a null
 void assertptr(void *val, std::string ErrorText) {
 	if (val == nullptr) {
 		cout << ErrorText << SDL_GetError() << std::endl;
@@ -90,17 +95,26 @@ void assertptr(void *val, std::string ErrorText) {
 	}
 }
 
-void copy_level(ifstream *levelfile, int currentfloor) {
+/* Subfunction for read_world
+ *
+ * This takes the file stream that we are working on and imports the
+ * floor that the stream points at to the floor that targetfloor indicates
+ */
+void copy_level(ifstream *levelfile, int targetfloor) {
 	string line;
 
 	for (int i = 0; i < SCREEN_RADIUS * 2; i++) {
 		getline (*levelfile, line);
 		for (size_t j = 0; j < line.size(); j++) {
-			gameworld[currentfloor][j][i] = line[j];
+			gameworld[targetfloor][j][i] = line[j];
 		}
 	}
 }
 
+/* Subfunction for read_world
+ *
+ * 
+ */
 void skip_level(ifstream *levelfile) {
 	string line;
 
@@ -165,11 +179,8 @@ void logSDLError(std::ostream &os, const std::string &msg){
 }
 
 SDL_Texture* load_texture(const std::string &file, SDL_Renderer *ren){
-
 	SDL_Texture *texture = nullptr;
-
 	SDL_Surface *loadedImage = SDL_LoadBMP(file.c_str());
-
 	if (loadedImage != nullptr){
 		texture = SDL_CreateTextureFromSurface(ren, loadedImage);
 
@@ -193,20 +204,21 @@ void render_texture(SDL_Texture *tex, SDL_Renderer *ren, int x, int y){
 	SDL_RenderCopy(ren, tex, NULL, &destination);
 }
 
+//Render a sprite from the given spritesheet
 void render_sprite(SDL_Texture *tex, SDL_Renderer *ren, int srcx, int srcy, int x, int y) {
-
 	SDL_Rect source;
+	//Create a source rectangle
 	source.x = srcx;
 	source.y = srcy;
 	source.h = TILE_SIZE;
 	source.w = TILE_SIZE;
-
+	//Create the destination rectangle
 	SDL_Rect destination;
 	destination.x = x;
 	destination.y = y;
 	destination.h = TILE_SIZE;
 	destination.w = TILE_SIZE;
-
+	//Render the source to the destination
 	SDL_RenderCopy(ren, tex, &source, &destination);
 }
 
@@ -254,8 +266,8 @@ void do_fov(float x,float y, Player *player) {
 	for(i=0;i<FOV_RADIUS;i++) {
 		if ((int)ox < 0 || (int)ox > 59) continue;
 		if ((int)oy < 0 || (int)oy > 59) continue;
-		player->playerWorld[player->currentfloor][(int)ox][(int)oy] = gameworld[player->currentfloor][(int)ox][(int)oy];
-		player->playerColorMesh[(int)ox][(int)oy] = 1;
+		player->world[player->currentfloor][(int)ox][(int)oy] = gameworld[player->currentfloor][(int)ox][(int)oy];
+		player->color_mesh[(int)ox][(int)oy] = 1;
 		if(gameworld[player->currentfloor][(int)ox][(int)oy]=='#') return;
 		ox += x;
 		oy += y;
@@ -265,7 +277,7 @@ void do_fov(float x,float y, Player *player) {
 void FOV (Player *player) {
 	float x,y;
 	int i;
-	clear_color_mesh(player);
+	player->clear_color_mesh();
 	for(i=0;i<360;i++) {
 		x=cos((float)i*0.01745f);
 		y=sin((float)i*0.01745f);
@@ -279,14 +291,14 @@ void render_player_world(SDL_Texture *tex, SDL_Renderer *ren, Player *player) {
 	int offset;
 	for (size_t i = 0; i < 60; i++) {
 		for (size_t j = 0; j < 60; j++) {
-			if (player->playerWorld[player->currentfloor][j][i] != '=') {
+			if (player->world[player->currentfloor][j][i] != '=') {
 				//render bright tiles
-				if (player->playerColorMesh[j][i] == 1) {
+				if (player->color_mesh[j][i] == 1) {
 					offset = LIGHT_SPRITE_Y_START;
 				} else {
 					offset = DARK_SPRITE_Y_START;
 				}
-				switch (player->playerWorld[player->currentfloor][j][i]) {
+				switch (player->world[player->currentfloor][j][i]) {
 					case '#':
 						//Render wall
 						render_sprite(tex, ren, WALL_SPRITE_OFFSET, offset, j * TILE_SIZE, i * TILE_SIZE);
@@ -418,7 +430,7 @@ int main(int, char**){
 	player.ylocation = 14;
 	player.hasmoved = false;
 	player.currentfloor = 0;
-	initialize_player_world(&player);
+	player.initialize_player_world();
 	int quit = 0;
 	//Main game loop
 
