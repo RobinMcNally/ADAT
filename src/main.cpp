@@ -7,32 +7,13 @@
 #include <unistd.h>
 #include "../include/cleanup.h"
 #include "../include/statics.h"
+#include "../include/monster.h"
+#include "../include/util.h"
+#include "../include/world.h"
 
 using namespace std;
 
-extern int SCREEN_WIDTH;
-extern int SCREEN_HEIGHT;
-extern int SCREEN_CENTER[2];
-extern int FOV_RADIUS;
-extern int TILE_SIZE;
-
-extern int LOG_LINE_LENGTH;
-extern int LOG_LINE_COUNT;
-extern int LOG_LOWER_LEFT[2];
-
-extern int UPPER_CHAR_START;
-extern int LOWER_CHAR_START;
-
-extern int DARK_SPRITE_Y_START;
-extern int LIGHT_SPRITE_Y_START;
-
-extern int WALL_SPRITE_OFFSET;
-extern int FLOOR_SPRITE_OFFSET;
-extern int DOOR_SPRITE_OFFSET;
-
-extern int TOWER_HEIGHT;
-
-char const * IMPASSIBLE_TERRAIN = "=#";
+char const* IMPASSIBLE_TERRAIN = "=#";
 
 enum directions {
 	NORTH = 8,
@@ -48,18 +29,7 @@ enum directions {
 
 vector<string> logoutput;
 
-//Notation for this file is [z][x][y] or [x][y] for two dimensional arrays
-//Tower height is 6
-char gameworld[6][60][60];
-
-class Monster {
-public:
-	int health;
-	int maxhealth;
-	int xlocation;
-	int ylocation;
-	int currentfloor;
-}
+World gameworld;
 
 class Player {
 public:
@@ -71,7 +41,7 @@ public:
 	int xlocation;
 	int ylocation;
 	int currentfloor;
-	char world[6][60][60];
+	char world[TOWER_HEIGHT][60][60];
 	int color_mesh[60][60];
 	void initialize_player_world();
 	void clear_color_mesh();
@@ -79,7 +49,7 @@ public:
 
 // Initialize the player world to the default nonrendered character ('=')
 void Player::initialize_player_world() {
-	for (size_t i = 0; i < 6; i++) {
+	for (size_t i = 0; i < TOWER_HEIGHT; i++) {
 		for (size_t j = 0; j < 60; j++) {
 			for (size_t k = 0; k < 60; k++) {
 				world[i][j][k] = '=';
@@ -105,105 +75,6 @@ void assertptr(void *val, std::string ErrorText) {
 		cout << ErrorText << SDL_GetError() << std::endl;
 		SDL_Quit();
 		exit(1);
-	}
-}
-
-/* Subfunction for read_world
- *
- * This takes the file stream that we are working on and imports the
- * floor that the stream points at to the floor that targetfloor indicates
- */
-void copy_level(ifstream *levelfile, int targetfloor) {
-	string line;
-
-	for (int i = 0; i < SCREEN_RADIUS * 2; i++) {
-		getline (*levelfile, line);
-		for (size_t j = 0; j < line.size(); j++) {
-			gameworld[targetfloor][j][i] = line[j];
-		}
-	}
-}
-
-/* Subfunction for read_world
- *
- * This function is called at the beginning of an undesired level in the
- * levels file. It will bypass the level
- */
-void skip_level(ifstream *levelfile) {
-	string line;
-
-	for (int i = 0; i < SCREEN_RADIUS * 2; i++) {
-		getline (*levelfile, line);
-	}
-}
-
-/* Subfunction for read_world
- *
- * This skips any whitespace (and comment lines which begine with *)
- */
-string skip_whitespace(ifstream *levelfile) {
-	string line = "";
-	while (line == "") {
-		getline(*levelfile, line);
-		if (line[0] == '*') {
-			line = "";
-		}
-	}
-	return line;
-}
-
-/* Function that reads through the level text file and generates a Tower
- * based on that file.
- *
- * This world generation is not random. Only the order of the levels is.
- */
-void read_world() {
-	string line;
-	int floorcount;
-	int randomfloor = 0;
-	int parsedcount = 0;
-	int currentfloor = 0;
-	srand(time(NULL));
-
-	ifstream levelfile("res/levels.txt");
-	if (levelfile.is_open()) {
-		line = skip_whitespace(&levelfile);
-
-		//Verify that the line is only an integer
-		for (size_t i = 0; i < line.size(); i++) {
-			if (!isdigit(line[0])) {
-				cout << "Improper syntax in levels file\n" << line;
-				exit(1);
-			}
-		}
-		floorcount = stoi(line);
-
-		for (int i = 0; i < TOWER_HEIGHT; i++) {
-			randomfloor = rand() % floorcount;
-			while (parsedcount < floorcount) {
-				//Scan through blank lines (or ones with comments) till we get one with something in it
-				line = skip_whitespace(&levelfile);
-				for (size_t i = 0; i < line.size(); i++) {
-					if (!isdigit(line[0])) {
-						cout << "Improper syntax in levels file\n" << line;
-						exit(1);
-					}
-				}
-				if (stoi(line) == randomfloor) {
-					copy_level(&levelfile, currentfloor);
-				} else {
-					skip_level(&levelfile);
-				}
-				parsedcount++;
-			}
-			levelfile.clear();
-			levelfile.seekg(0, ios::beg);
-			getline(levelfile, line);
-		}
-		levelfile.close();
-		cout << "hi\n";
-	} else {
-		cout << "Levels file failed to open. Exiting.\n";
 	}
 }
 
@@ -320,9 +191,9 @@ void do_fov(float x,float y, Player *player) {
 	for(i=0;i<FOV_RADIUS;i++) {
 		if ((int)ox < 0 || (int)ox > 59) continue;
 		if ((int)oy < 0 || (int)oy > 59) continue;
-		player->world[player->currentfloor][(int)ox][(int)oy] = gameworld[player->currentfloor][(int)ox][(int)oy];
+		player->world[player->currentfloor][(int)ox][(int)oy] = gameworld.terrainmesh[player->currentfloor][(int)ox][(int)oy];
 		player->color_mesh[(int)ox][(int)oy] = 1;
-		if(gameworld[player->currentfloor][(int)ox][(int)oy]=='#') return;
+		if(gameworld.terrainmesh[player->currentfloor][(int)ox][(int)oy]=='#') return;
 		ox += x;
 		oy += y;
 	};
@@ -424,7 +295,7 @@ bool try_action(int action, Player *player) {
 		default:
 			break;
 	}
-	if (chars.find(gameworld[player->currentfloor][player->xlocation + player_offset[0]][player->ylocation + player_offset[1]]) != chars.end())  {
+	if (chars.find(gameworld.terrainmesh[player->currentfloor][player->xlocation + player_offset[0]][player->ylocation + player_offset[1]]) != chars.end())  {
 		add_to_log(string("Bump!"));
 		return false;
 	} else {
@@ -491,7 +362,7 @@ int main(int, char**){
 	SDL_Texture *spritesheet = load_texture("res/adat_sprites.bmp", renderer);
 	SDL_Event event;
 
-	read_world();
+	gameworld.initialize();
 
 	Player player;
 	player.xlocation = 14;
@@ -500,7 +371,6 @@ int main(int, char**){
 	player.currentfloor = 0;
 	player.initialize_player_world();
 	int quit = 0;
-	//Main game loop
 
 	while(!quit) {
 		//First clear the renderer

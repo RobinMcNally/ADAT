@@ -9,13 +9,23 @@ CXXFLAGS = -Wall -c -std=c++11 $(SDL_INCLUDE)
 LDFLAGS = $(SDL_LIB)
 EXE = ADAT
 VPATH = src
+OBJECTS = main.o util.o monster.o world.o
 
 all: $(EXE)
 
-$(EXE): main.o
-	$(CXX) $< $(LDFLAGS) -o $@
+$(EXE): $(OBJECTS)
+	$(CXX) $(OBJECTS) $(LDFLAGS) -o $@
 
 main.o: main.cpp
+	$(CXX) $(CXXFLAGS) $< -o $@
+
+util.o: util.cpp
+	$(CXX) $(CXXFLAGS) $< -o $@
+
+monster.o: monster.cpp
+	$(CXX) $(CXXFLAGS) $< -o $@
+
+world.o: world.cpp
 	$(CXX) $(CXXFLAGS) $< -o $@
 
 clean:
