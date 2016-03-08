@@ -113,7 +113,8 @@ void copy_level(ifstream *levelfile, int targetfloor) {
 
 /* Subfunction for read_world
  *
- * 
+ * This function is called at the beginning of an undesired level in the
+ * levels file. It will bypass the level
  */
 void skip_level(ifstream *levelfile) {
 	string line;
@@ -123,6 +124,10 @@ void skip_level(ifstream *levelfile) {
 	}
 }
 
+/* Subfunction for read_world
+ *
+ * This skips any whitespace (and comment lines which begine with *)
+ */
 string skip_whitespace(ifstream *levelfile) {
 	string line = "";
 	while (line == "") {
@@ -134,20 +139,32 @@ string skip_whitespace(ifstream *levelfile) {
 	return line;
 }
 
+/* Function that reads through the level text file and generates a Tower
+ * based on that file.
+ *
+ * This world generation is not random. Only the order of the levels is.
+ */
 void read_world() {
 	string line;
 	int floorcount;
 	int randomfloor = 0;
 	int parsedcount = 0;
 	int currentfloor = 0;
+	srand(time(NULL));
 
 	ifstream levelfile("res/levels.txt");
 	if (levelfile.is_open()) {
 		line = skip_whitespace(&levelfile);
 
-		//Super jank to the rescue
+		//Verify that the line is only an integer
+		for (size_t i = 0; i < line.size(); i++) {
+			if (!isdigit(line[0])) {
+				cout << "Improper syntax in levels file\n" << line;
+				exit(1);
+			}
+		}
 		floorcount = stoi(line);
-		srand(time(NULL));
+
 		for (int i = 0; i < TOWER_HEIGHT; i++) {
 			randomfloor = rand() % floorcount;
 			while (parsedcount < floorcount) {
@@ -156,6 +173,7 @@ void read_world() {
 				for (size_t i = 0; i < line.size(); i++) {
 					if (!isdigit(line[0])) {
 						cout << "Improper syntax in levels file\n" << line;
+						exit(1);
 					}
 				}
 				if (stoi(line) == randomfloor) {
@@ -171,13 +189,16 @@ void read_world() {
 		}
 		levelfile.close();
 		cout << "hi\n";
+	} else {
+		cout << "Levels file failed to open. Exiting.\n";
 	}
 }
 
+//Function for logging SDL errors
 void logSDLError(std::ostream &os, const std::string &msg){
 	os << msg << " error: " << SDL_GetError() << std::endl;
 }
-
+//Loads a bitmap texture given by file
 SDL_Texture* load_texture(const std::string &file, SDL_Renderer *ren){
 	SDL_Texture *texture = nullptr;
 	SDL_Surface *loadedImage = SDL_LoadBMP(file.c_str());
@@ -196,6 +217,7 @@ SDL_Texture* load_texture(const std::string &file, SDL_Renderer *ren){
 	return texture;
 }
 
+//Render an entire texture to the screen
 void render_texture(SDL_Texture *tex, SDL_Renderer *ren, int x, int y){
 	SDL_Rect destination;
 	destination.x = x;
@@ -227,22 +249,35 @@ void add_to_log(string message) {
 	logoutput.push_back(message);
 }
 
+/* Display function for the in game log
+ *
+ * Takes string entries beginning at the end of the global vector logoutput
+ * (it will be replaced with something better eventually)
+ * and renders it to the screen
+ */
 void render_game_log(SDL_Texture *tex, SDL_Renderer *ren) {
 	int line = 0;
 	int current_line_position = 0;
 	int location;
 
+	//Get a reverse iterator and loop through the vector from end to beginning
 	for (vector<string>::reverse_iterator rit = logoutput.rbegin(); rit != logoutput.rend(); ++rit) {
+		//If the line we are on is higher than the top of the log stop
 		if (line > LOG_LINE_COUNT) break;
 		if ((*rit).size() > (uint)LOG_LINE_LENGTH) {
 			//Handle multiline comment later
 		} else {
 			current_line_position = 0;
+			//Get an iterator to the string
 			for (string::iterator sit = (*rit).begin(); sit != (*rit).end(); ++sit) {
+				// Determine the case of the character and print its related
+				// sprite to the screen
 				if(isupper(*sit)) {
+					// 65 is ascii code for 'A'
 					location = *sit - 65;
 					render_sprite(tex, ren, location * TILE_SIZE + UPPER_CHAR_START, 0, LOG_LOWER_LEFT[0] * TILE_SIZE + (current_line_position++ * TILE_SIZE), LOG_LOWER_LEFT[1] * TILE_SIZE - (line * TILE_SIZE));
 				} else if (islower(*sit))  {
+					// 97 is ascii code for 'a'
 					location = *sit - 97;
 					render_sprite(tex, ren, location * TILE_SIZE + LOWER_CHAR_START, 0, LOG_LOWER_LEFT[0] * TILE_SIZE + (current_line_position++ * TILE_SIZE), LOG_LOWER_LEFT[1] * TILE_SIZE - (line * TILE_SIZE));
 				}
@@ -257,6 +292,12 @@ void render_game_log(SDL_Texture *tex, SDL_Renderer *ren) {
 double distance(int y1, int x1, int y2, int x2) {
 	return sqrt( abs( (int) (pow((y2 - y1), 2) + pow(x2 - x1, 2)) ) );
 }
+/* These following two functions are based off of the pseudocode from
+ *
+ * http://www.roguebasin.com/index.php?title=Eligloscode
+ */
+
+/*----------------------------------------------------------------------------*/
 
 void do_fov(float x,float y, Player *player) {
 	int i;
@@ -286,18 +327,26 @@ void FOV (Player *player) {
 
 }
 
+/*----------------------------------------------------------------------------*/
 
+/* The main rendering function for the entire game.
+ *
+ * This renders all of the current floor.
+ */
 void render_player_world(SDL_Texture *tex, SDL_Renderer *ren, Player *player) {
 	int offset;
+	//Loop through the world
 	for (size_t i = 0; i < 60; i++) {
 		for (size_t j = 0; j < 60; j++) {
+			//Ignore '=' characters since they are the "blank" for this world
 			if (player->world[player->currentfloor][j][i] != '=') {
-				//render bright tiles
+				//render bright tiles differently
 				if (player->color_mesh[j][i] == 1) {
 					offset = LIGHT_SPRITE_Y_START;
 				} else {
 					offset = DARK_SPRITE_Y_START;
 				}
+				//Switch on different types of block
 				switch (player->world[player->currentfloor][j][i]) {
 					case '#':
 						//Render wall
@@ -318,6 +367,11 @@ void render_player_world(SDL_Texture *tex, SDL_Renderer *ren, Player *player) {
 	}
 }
 
+/* The function that will handle player logic (such as it is)
+ *
+ * This (should) handle all ingame player input (attacks, walking, etc)
+ * menus and such will be handled elsewhere
+ */
 bool try_action(int action, Player *player) {
 	set<char> chars;
 	int player_offset[2] = {0, 0};
@@ -367,6 +421,8 @@ bool try_action(int action, Player *player) {
 	}
 }
 
+/* A handler for player keypresses
+ */
 void handle_keypress(Player *player, SDL_Event event) {
 	switch(event.key.keysym.sym) {
 		case SDLK_LEFT:
@@ -408,7 +464,6 @@ void handle_keypress(Player *player, SDL_Event event) {
 
 int main(int, char**){
 
-	usleep(4000);
 	if (SDL_Init(SDL_INIT_VIDEO) != 0){
 		std::cout << "SDL_Init Error: " << SDL_GetError() << std::endl;
 		return 1;
@@ -434,12 +489,10 @@ int main(int, char**){
 	int quit = 0;
 	//Main game loop
 
-	add_to_log(string("Hello"));
-	add_to_log(string("How"));
-	add_to_log(string("Are"));
 	while(!quit) {
 		//First clear the renderer
 		SDL_RenderClear(renderer);
+
 		//Draw the texture
 		while (!SDL_PollEvent(&event)) {};
 		do {
@@ -459,6 +512,7 @@ int main(int, char**){
 		//Generate player field of view
 		FOV(&player);
 		render_texture(background, renderer, 0, 0);
+
 		render_game_log(spritesheet, renderer);
 
 		//Render world
