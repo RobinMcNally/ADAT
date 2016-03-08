@@ -13,8 +13,6 @@
 
 using namespace std;
 
-char const* IMPASSIBLE_TERRAIN = "=#";
-
 enum directions {
 	NORTH = 8,
 	SOUTH = 2,

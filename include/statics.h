@@ -27,7 +27,10 @@ static const int WALL_SPRITE_OFFSET = 0;
 static const int FLOOR_SPRITE_OFFSET = 14;
 static const int DOOR_SPRITE_OFFSET = 28;
 
+static const int MONSTER_COUNT = 10;
 
-const int TOWER_HEIGHT = 6;
+static const int TOWER_HEIGHT = 6;
+
+static char const* IMPASSIBLE_TERRAIN = "=#";
 
 #endif
