@@ -52,8 +52,21 @@ vector<string> logoutput;
 //Tower height is 6
 char gameworld[6][60][60];
 
+class Monster {
+public:
+	int health;
+	int maxhealth;
+	int xlocation;
+	int ylocation;
+	int currentfloor;
+}
+
 class Player {
 public:
+	int health;
+	int maxhealth;
+	int stamina;
+	int maxstamina;
 	bool hasmoved;
 	int xlocation;
 	int ylocation;
