@@ -20,4 +20,5 @@ int sign(int tocheck) {
 	if (tocheck < 0) return -1;
 	if (tocheck == 0) return 0;
 	if (tocheck > 0) return 1;
+	return 0;
 }

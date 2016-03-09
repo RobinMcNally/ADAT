@@ -142,13 +142,11 @@ void World::monsters_turn(Player *player) {
 		//Only move if the player can see us for now
 		//Also, this is the worst approach to pathfinding ever and I need to
 		//replace it
-		cout << "x: " << it->xlocation << " y: " << it->ylocation << "\n";
 		if (player->color_mesh[it->xlocation][it->ylocation] == 1) {
 			offset[0] = sign(player->xlocation - it->xlocation);
 			offset[1] = sign(player->ylocation - it->ylocation);
 
-			cout << "offset: [" << offset[0] << ", " << offset[1] << "]\n";
-			if (chars.find(terrainmesh[it->currentfloor][it->xlocation + offset[0]][it->xlocation + offset[1]]) == chars.end()) {
+			if (chars.find(terrainmesh[it->currentfloor][it->xlocation + offset[0]][it->ylocation + offset[1]]) == chars.end()) {
 				it->xlocation += offset[0];
 				it->ylocation += offset[1];
 			}
