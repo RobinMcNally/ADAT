@@ -181,6 +181,9 @@ void render_player_world(SDL_Texture *tex, SDL_Renderer *ren, Player *player) {
 					case '+':
 						render_sprite(tex, ren, DOOR_SPRITE_OFFSET, offset, j * TILE_SIZE, i * TILE_SIZE);
 						break;
+					case ',':
+						render_sprite(tex, ren, OPEN_DOOR_SPRITE_OFFSET, offset, j * TILE_SIZE, i * TILE_SIZE);
+						break;
 					default:
 						render_sprite(tex, ren, WALL_SPRITE_OFFSET, offset, j * TILE_SIZE, i * TILE_SIZE);
 						break;
@@ -251,13 +254,36 @@ bool try_action(int action) {
 		default:
 			break;
 	}
-	if (gameworld.is_space_free(gameworld.player.currentfloor, gameworld.player.xlocation + player_offset[0], gameworld.player.ylocation + player_offset[1]))  {
-		gameworld.player.xlocation += player_offset[0];
-		gameworld.player.ylocation += player_offset[1];
+	if (gameworld.is_space_free(gameworld.player->currentfloor,
+			gameworld.player->xlocation + player_offset[0],
+			gameworld.player->ylocation + player_offset[1]))  {
+
+		gameworld.player->xlocation += player_offset[0];
+		gameworld.player->ylocation += player_offset[1];
 		return true;
 	} else {
-		add_to_log(string("Bump!"));
-		return false;
+		if (gameworld.is_monster(gameworld.player->currentfloor,
+				gameworld.player->xlocation + player_offset[0],
+				gameworld.player->ylocation + player_offset[1])) {
+
+			Monster* target = gameworld.get_monster(gameworld.player->currentfloor,
+				gameworld.player->xlocation + player_offset[0],
+				gameworld.player->ylocation + player_offset[1]);
+
+			gameworld.player->attack(target);
+			return true;
+		} else if (gameworld.is_door(gameworld.player->currentfloor,
+				gameworld.player->xlocation + player_offset[0],
+				gameworld.player->ylocation + player_offset[1])){
+
+			gameworld.open_door(gameworld.player->currentfloor,
+					gameworld.player->xlocation + player_offset[0],
+					gameworld.player->ylocation + player_offset[1]);
+			return true;
+		} else {
+			add_to_log(string("Bump!"));
+			return false;
+		}
 	}
 }
 
@@ -329,36 +355,36 @@ int main(int, char**){
 
 
 		//Generate player field of view
-		FOV(&(gameworld.player));
+		FOV(gameworld.player);
 
 		render_texture(background, renderer, 0, 0);
 
 		render_game_log(spritesheet, renderer);
-		render_player_world(spritesheet, renderer, &(gameworld.player));
-		render_monsters(spritesheet, renderer, &gameworld, &(gameworld.player));
+		render_player_world(spritesheet, renderer, gameworld.player);
+		render_monsters(spritesheet, renderer, &gameworld, gameworld.player);
 		//Render player characters
-		render_sprite(spritesheet, renderer, (6 * TILE_SIZE), (5 * TILE_SIZE), (gameworld.player.xlocation * TILE_SIZE), (gameworld.player.ylocation * TILE_SIZE));
+		render_sprite(spritesheet, renderer, (6 * TILE_SIZE), (5 * TILE_SIZE), (gameworld.player->xlocation * TILE_SIZE), (gameworld.player->ylocation * TILE_SIZE));
 		SDL_RenderPresent(renderer);
 
 		//Draw the texture
 		while (!SDL_PollEvent(&event)) {};
-		gameworld.player.hasmoved = false;
+		gameworld.player->hasmoved = false;
 		do {
 			//Handle input
 			switch(event.type) {
 				case SDL_QUIT:
 					quit = 1;
-					gameworld.player.hasmoved = true;
+					gameworld.player->hasmoved = true;
 					break;
 				case SDL_KEYDOWN:
-					gameworld.player.hasmoved = handle_keypress(&(gameworld.player), event);
+					gameworld.player->hasmoved = handle_keypress(gameworld.player, event);
 					break;
 				default:
 					break;
 			}
 		} while (SDL_PollEvent(&event));
 
-		if (gameworld.player.hasmoved) {
+		if (gameworld.player->hasmoved) {
 			gameworld.monsters_turn();
 		}
 	}

@@ -26,13 +26,20 @@ static const int LIGHT_SPRITE_Y_START = 70;
 static const int WALL_SPRITE_OFFSET = 0;
 static const int FLOOR_SPRITE_OFFSET = 14;
 static const int DOOR_SPRITE_OFFSET = 28;
+static const int OPEN_DOOR_SPRITE_OFFSET = 98;
 
 static const int MONSTER_COUNT = 10;
 static const int MONSTER_TYPE_COUNT = 1;
 
 static const int TOWER_HEIGHT = 6;
 
-static char const* IMPASSIBLE_TERRAIN = "=#";
+static const int PLAYER_START_HEALTH = 10;
+static const int PLAYER_START_STAMINA = 5;
+
+static const int PLAYER_START_STATS = 5;
+
+static char const* IMPASSIBLE_TERRAIN = "=#+";
+
 
 enum monsters : int {
 	GOBLIN = 0

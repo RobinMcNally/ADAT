@@ -17,11 +17,11 @@ void World::initialize() {
 		}
 	}
 	place_monsters();
-	player.xlocation = 14;
-	player.ylocation = 14;
-	player.hasmoved = false;
-	player.currentfloor = 0;
-	player.initialize_player_world();
+	player = new Player();
+	player->xlocation = 14;
+	player->ylocation = 14;
+	player->hasmoved = false;
+	player->currentfloor = 0;
 }
 
 /* Subfunction for read_world
@@ -143,8 +143,8 @@ bool World::is_space_free(int currentfloor, int xpos, int ypos) {
 	chars.insert(IMPASSIBLE_TERRAIN, IMPASSIBLE_TERRAIN + strlen(IMPASSIBLE_TERRAIN));
 
 	bool terrainfree = (chars.find(terrainmesh[currentfloor][xpos][ypos]) == chars.end());
-	bool monstersfree = is_monster(currentfloor, xpos, ypos);
-	bool playerfree = !(player.xlocation == xpos && player.ylocation == ypos);
+	bool monstersfree = !is_monster(currentfloor, xpos, ypos);
+	bool playerfree = !(player->xlocation == xpos && player->ylocation == ypos);
 
 	return (terrainfree && monstersfree && playerfree);
 }
@@ -156,9 +156,9 @@ void World::monsters_turn() {
 		//Only move if the player can see us for now
 		//Also, this is the worst approach to pathfinding ever and I need to
 		//replace it
-		if (player.color_mesh[it->xlocation][it->ylocation] == 1) {
-			offset[0] = sign(player.xlocation - it->xlocation);
-			offset[1] = sign(player.ylocation - it->ylocation);
+		if (player->color_mesh[it->xlocation][it->ylocation] == 1) {
+			offset[0] = sign(player->xlocation - it->xlocation);
+			offset[1] = sign(player->ylocation - it->ylocation);
 
 			if (is_space_free(it->currentfloor, it->xlocation + offset[0], it->ylocation + offset[1])) {
 				it->xlocation += offset[0];
@@ -174,6 +174,23 @@ bool World::is_monster(int currentfloor, int xpos, int ypos) {
 		if (it->xlocation == xpos && it->ylocation == ypos && it->currentfloor == currentfloor) ismonster = true;
 	}
 	return ismonster;
+}
+
+bool World::is_door(int currentfloor, int xpos, int ypos) {
+	bool isdoor = false;
+	if (terrainmesh[currentfloor][xpos][ypos] == '+') isdoor = true;
+	return isdoor;
+}
+
+bool World::open_door(int currentfloor, int xpos, int ypos) {
+	bool completed;
+	if (is_door(currentfloor, xpos, ypos)) {
+		terrainmesh[currentfloor][xpos][ypos] = ',';
+		completed = true;
+	} else {
+		completed = false;
+	}
+	return completed;
 }
 
 Monster* World::get_monster(int currentfloor, int xpos, int ypos) {

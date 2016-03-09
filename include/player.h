@@ -9,6 +9,9 @@ public:
 	int maxhealth;
 	int stamina;
 	int maxstamina;
+	int STR;
+	int DEX;
+	int CON;
 	bool hasmoved;
 	int xlocation;
 	int ylocation;
@@ -17,5 +20,7 @@ public:
 	int color_mesh[60][60];
 	void initialize_player_world();
 	void clear_color_mesh();
+	void attack(Monster* target);
+	Player();
 };
 #endif
