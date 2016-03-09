@@ -3,6 +3,9 @@
 
 using namespace std;
 
+class Player;
+class Monster;
+
 class World {
 public:
 	char terrainmesh[TOWER_HEIGHT][60][60];
@@ -15,8 +18,11 @@ public:
 	void skip_level(ifstream *levelfile);
 	string skip_whitespace(ifstream *levelfile);
 	bool is_space_free(int currentfloor, int xpos, int ypos);
+	bool is_monster(int currentfloor, int xpos, int ypos);
+	Monster* get_monster(int currentfloor, int xpos, int ypos);
 	void place_monsters();
 	void monsters_turn();
+
 };
 
 #endif

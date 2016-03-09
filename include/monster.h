@@ -1,6 +1,8 @@
 #ifndef MONSTER_H
 #define MONSTER_H
 
+class Player;
+
 class Monster {
 public:
 	Monster(int type, int towerlevel);

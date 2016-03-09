@@ -1,5 +1,8 @@
 #ifndef PLAYER_H
 #define PLAYER_H
+
+class Monster;
+
 class Player {
 public:
 	int health;

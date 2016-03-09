@@ -143,10 +143,7 @@ bool World::is_space_free(int currentfloor, int xpos, int ypos) {
 	chars.insert(IMPASSIBLE_TERRAIN, IMPASSIBLE_TERRAIN + strlen(IMPASSIBLE_TERRAIN));
 
 	bool terrainfree = (chars.find(terrainmesh[currentfloor][xpos][ypos]) == chars.end());
-	bool monstersfree = true;
-	for (vector<Monster>::iterator it = monsters.begin(); it != monsters.end(); it++) {
-		if (it->xlocation == xpos && it->ylocation == ypos) monstersfree = false;
-	}
+	bool monstersfree = is_monster(currentfloor, xpos, ypos);
 	bool playerfree = !(player.xlocation == xpos && player.ylocation == ypos);
 
 	return (terrainfree && monstersfree && playerfree);
@@ -169,4 +166,21 @@ void World::monsters_turn() {
 			}
 		}
 	}
+}
+
+bool World::is_monster(int currentfloor, int xpos, int ypos) {
+	bool ismonster = false;
+	for (vector<Monster>::iterator it = monsters.begin(); it != monsters.end(); it++) {
+		if (it->xlocation == xpos && it->ylocation == ypos && it->currentfloor == currentfloor) ismonster = true;
+	}
+	return ismonster;
+}
+
+Monster* World::get_monster(int currentfloor, int xpos, int ypos) {
+	for (vector<Monster>::iterator it = monsters.begin(); it != monsters.end(); it++) {
+		if (it->xlocation == xpos && it->ylocation == ypos && it->currentfloor == currentfloor) {
+			return &(*it);
+		}
+	}
+	return NULL;
 }
