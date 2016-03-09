@@ -3,6 +3,7 @@
 
 class Monster {
 public:
+	Monster(int type);
 	int health;
 	int maxhealth;
 	int tohit;
@@ -13,9 +14,9 @@ public:
 	int currentfloor;
 };
 
-class Goblin : public Monster {
+class MonsterFactory {
 public:
-	Goblin();
+	Monster make_monster();
 };
 
 #endif

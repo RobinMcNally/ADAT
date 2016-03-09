@@ -1,4 +1,4 @@
-#include "../include/world.h"
+#include "../include/includes.h"
 
 void World::initialize() {
 	for (size_t i = 0; i < TOWER_HEIGHT; i++) {
@@ -126,5 +126,25 @@ void World::read_world() {
 }
 
 void World::place_monsters() {
+	srand(time(NULL));
+	int x;
+	int y;
+	set<char> chars;
+	chars.insert(IMPASSIBLE_TERRAIN, IMPASSIBLE_TERRAIN + strlen(IMPASSIBLE_TERRAIN));
+	bool placed = false;
+	MonsterFactory monst;
 
+	for (size_t i = 0; i < MONSTER_COUNT; i++) {
+		placed = false;
+		while (!placed) {
+			x = rand() % 60;
+			y = rand() % 60;
+			if (chars.find(terrainmesh[0][x][y]) != chars.end()) {
+				monsters.push_back(monst.make_monster());
+				monsters.back().xlocation = x;
+				monsters.back().ylocation = y;
+				placed = true;
+			}
+		}
+	}
 }

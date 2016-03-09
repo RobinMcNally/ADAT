@@ -28,9 +28,26 @@ static const int FLOOR_SPRITE_OFFSET = 14;
 static const int DOOR_SPRITE_OFFSET = 28;
 
 static const int MONSTER_COUNT = 10;
+static const int MONSTER_TYPE_COUNT = 1;
 
 static const int TOWER_HEIGHT = 6;
 
 static char const* IMPASSIBLE_TERRAIN = "=#";
+
+enum monsters : int {
+	GOBLIN = 0
+};
+
+enum directions {
+	NORTH = 8,
+	SOUTH = 2,
+	EAST = 6,
+	WEST = 4,
+	NE = 9,
+	NW = 7,
+	SE = 3,
+	SW = 1,
+	STILL = 5
+};
 
 #endif

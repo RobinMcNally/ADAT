@@ -1,29 +1,7 @@
-#include <iostream>
-#include <string>
-#include <vector>
-#include <fstream>
-#include <set>
-#include <SDL2/SDL.h>
-#include <unistd.h>
+#include "../include/includes.h"
 #include "../include/cleanup.h"
-#include "../include/statics.h"
-#include "../include/monster.h"
-#include "../include/util.h"
-#include "../include/world.h"
 
 using namespace std;
-
-enum directions {
-	NORTH = 8,
-	SOUTH = 2,
-	EAST = 6,
-	WEST = 4,
-	NE = 9,
-	NW = 7,
-	SE = 3,
-	SW = 1,
-	STILL = 5
-};
 
 vector<string> logoutput;
 
