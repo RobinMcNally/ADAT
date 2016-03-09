@@ -3,7 +3,7 @@
 
 class Monster {
 public:
-	Monster(int type);
+	Monster(int type, int towerlevel);
 	int health;
 	int maxhealth;
 	int tohit;
@@ -12,6 +12,7 @@ public:
 	int xlocation;
 	int ylocation;
 	int currentfloor;
+	char displaycharacter;
 };
 
 class MonsterFactory {

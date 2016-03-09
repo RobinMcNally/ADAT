@@ -5,5 +5,6 @@
 #include <ctime>
 
 int roll_dice(int count, int sides);
+int sign(int tocheck);
 
 #endif

@@ -7,44 +7,6 @@ vector<string> logoutput;
 
 World gameworld;
 
-class Player {
-public:
-	int health;
-	int maxhealth;
-	int stamina;
-	int maxstamina;
-	bool hasmoved;
-	int xlocation;
-	int ylocation;
-	int currentfloor;
-	char world[TOWER_HEIGHT][60][60];
-	int color_mesh[60][60];
-	void initialize_player_world();
-	void clear_color_mesh();
-};
-
-// Initialize the player world to the default nonrendered character ('=')
-void Player::initialize_player_world() {
-	for (size_t i = 0; i < TOWER_HEIGHT; i++) {
-		for (size_t j = 0; j < 60; j++) {
-			for (size_t k = 0; k < 60; k++) {
-				world[i][j][k] = '=';
-			}
-		}
-	}
-}
-
-// Set the color mesh to zero
-// This will be called each move so we should probably streamline it
-// O(n^2) is a bit much for each time
-void Player::clear_color_mesh() {
-	for (size_t i = 0; i < 60; i++) {
-		for (size_t j = 0; j < 60; j++) {
-			color_mesh[i][j] = 0;
-		}
-	}
-}
-
 // An assertation function that fails on a null
 void assertptr(void *val, std::string ErrorText) {
 	if (val == nullptr) {
@@ -212,6 +174,7 @@ void render_player_world(SDL_Texture *tex, SDL_Renderer *ren, Player *player) {
 						//Render wall
 						render_sprite(tex, ren, WALL_SPRITE_OFFSET, offset, j * TILE_SIZE, i * TILE_SIZE);
 						break;
+					case 'm':
 					case '.':
 						render_sprite(tex, ren, FLOOR_SPRITE_OFFSET, offset, j * TILE_SIZE, i * TILE_SIZE);
 						break;
@@ -222,6 +185,25 @@ void render_player_world(SDL_Texture *tex, SDL_Renderer *ren, Player *player) {
 						render_sprite(tex, ren, WALL_SPRITE_OFFSET, offset, j * TILE_SIZE, i * TILE_SIZE);
 						break;
 				}
+			}
+		}
+	}
+}
+
+void render_monsters(SDL_Texture *tex, SDL_Renderer *ren, World *world, Player *player) {
+	//Iterate through all the monsters
+	int location;
+	for (vector<Monster>::iterator it = world->monsters.begin(); it != world->monsters.end(); it++){
+		char disp = it->displaycharacter;
+		if (player->color_mesh[it->xlocation][it->ylocation] == 1) {
+			if(isupper(disp)) {
+				// 65 is ascii code for 'A'
+				location = disp - 65;
+				render_sprite(tex, ren, location * TILE_SIZE + UPPER_CHAR_START, 0, it->xlocation * TILE_SIZE, it->ylocation * TILE_SIZE);
+			} else if (islower(disp))  {
+				// 97 is ascii code for 'a'
+				location = disp - 97;
+				render_sprite(tex, ren, location * TILE_SIZE + LOWER_CHAR_START, 0, it->xlocation * TILE_SIZE, it->ylocation * TILE_SIZE);
 			}
 		}
 	}
@@ -283,40 +265,41 @@ bool try_action(int action, Player *player) {
 
 /* A handler for player keypresses
  */
-void handle_keypress(Player *player, SDL_Event event) {
+bool handle_keypress(Player *player, SDL_Event event) {
 	switch(event.key.keysym.sym) {
 		case SDLK_LEFT:
 		case SDLK_KP_4:
-			try_action(WEST, player);
+			return try_action(WEST, player);
 			break;
 		case SDLK_RIGHT:
 		case SDLK_KP_6:
-			try_action(EAST, player);
+			return try_action(EAST, player);
 			break;
 		case SDLK_UP:
 		case SDLK_KP_8:
-			try_action(NORTH, player);
+			return try_action(NORTH, player);
 			break;
 		case SDLK_DOWN:
 		case SDLK_KP_2:
-			try_action(SOUTH, player);
+			return try_action(SOUTH, player);
 			break;
 		case SDLK_KP_9:
-			try_action(NE, player);
+			return try_action(NE, player);
 			break;
 		case SDLK_KP_7:
-			try_action(NW, player);
+			return try_action(NW, player);
 			break;
 		case SDLK_KP_3:
-			try_action(SE, player);
+			return try_action(SE, player);
 			break;
 		case SDLK_KP_1:
-			try_action(SW, player);
+			return try_action(SW, player);
 			break;
 		case SDLK_KP_5:
-			try_action(STILL, player);
+			return try_action(STILL, player);
 			break;
 		default:
+			return false;
 		break;
 	}
 }
@@ -352,35 +335,40 @@ int main(int, char**){
 		//First clear the renderer
 		SDL_RenderClear(renderer);
 
+
+		//Generate player field of view
+		FOV(&player);
+
+		render_texture(background, renderer, 0, 0);
+
+		render_game_log(spritesheet, renderer);
+		render_player_world(spritesheet, renderer, &player);
+		render_monsters(spritesheet, renderer, &gameworld, &player);
+		//Render player characters
+		render_sprite(spritesheet, renderer, (6 * TILE_SIZE), (5 * TILE_SIZE), (player.xlocation * TILE_SIZE), (player.ylocation * TILE_SIZE));
+		SDL_RenderPresent(renderer);
+
 		//Draw the texture
 		while (!SDL_PollEvent(&event)) {};
+		player.hasmoved = false;
 		do {
 			//Handle input
 			switch(event.type) {
 				case SDL_QUIT:
 					quit = 1;
+					player.hasmoved = true;
 					break;
-					case SDL_KEYDOWN:
-						handle_keypress(&player, event);
-						break;
-					default:
-						break;
-				}
-			} while (SDL_PollEvent(&event));
+				case SDL_KEYDOWN:
+					player.hasmoved = handle_keypress(&player, event);
+					break;
+				default:
+					break;
+			}
+		} while (SDL_PollEvent(&event));
 
-		//Generate player field of view
-		FOV(&player);
-		render_texture(background, renderer, 0, 0);
-
-		render_game_log(spritesheet, renderer);
-
-		//Render world
-		render_player_world(spritesheet, renderer, &player);
-		//Render player character last
-		render_sprite(spritesheet, renderer, (5 * TILE_SIZE), (5 * TILE_SIZE), (player.xlocation * TILE_SIZE), (player.ylocation * TILE_SIZE));
-		//Update the screen
-		SDL_RenderPresent(renderer);
-		//Take a quick break after all that hard work
+		if (player.hasmoved) {
+			gameworld.monsters_turn(&player);
+		}
 	}
 
 	cleanup(renderer, window, background);

@@ -12,13 +12,6 @@ void World::initialize() {
 	for (size_t i = 0; i < TOWER_HEIGHT; i++) {
 		for (size_t j = 0; j < 60; j++) {
 			for (size_t k = 0; k < 60; k++) {
-				monstermesh[i][j][k] = 0;
-			}
-		}
-	}
-	for (size_t i = 0; i < TOWER_HEIGHT; i++) {
-		for (size_t j = 0; j < 60; j++) {
-			for (size_t k = 0; k < 60; k++) {
 				itemmesh[i][j][k] = 0;
 			}
 		}
@@ -119,31 +112,45 @@ void World::read_world() {
 			getline(levelfile, line);
 		}
 		levelfile.close();
-		cout << "hi\n";
 	} else {
 		cout << "Levels file failed to open. Exiting.\n";
 	}
 }
 
 void World::place_monsters() {
-	srand(time(NULL));
-	int x;
-	int y;
-	set<char> chars;
-	chars.insert(IMPASSIBLE_TERRAIN, IMPASSIBLE_TERRAIN + strlen(IMPASSIBLE_TERRAIN));
-	bool placed = false;
 	MonsterFactory monst;
 
-	for (size_t i = 0; i < MONSTER_COUNT; i++) {
-		placed = false;
-		while (!placed) {
-			x = rand() % 60;
-			y = rand() % 60;
-			if (chars.find(terrainmesh[0][x][y]) != chars.end()) {
-				monsters.push_back(monst.make_monster());
-				monsters.back().xlocation = x;
-				monsters.back().ylocation = y;
-				placed = true;
+	for (size_t i = 0; i < TOWER_HEIGHT; i++) {
+		for (size_t j = 0; j < 60; j++) {
+			for (size_t k = 0; k < 60; k++) {
+				if (terrainmesh[i][j][k] == 'm') {
+					monsters.push_back(monst.make_monster());
+					monsters.back().xlocation = j;
+					monsters.back().ylocation = k;
+				}
+			}
+		}
+	}
+}
+
+void World::monsters_turn(Player *player) {
+	set<char> chars;
+	chars.insert(IMPASSIBLE_TERRAIN, IMPASSIBLE_TERRAIN + strlen(IMPASSIBLE_TERRAIN));
+	int offset[2] = {0};
+
+	for (vector<Monster>::iterator it = monsters.begin(); it != monsters.end(); it++) {
+		//Only move if the player can see us for now
+		//Also, this is the worst approach to pathfinding ever and I need to
+		//replace it
+		cout << "x: " << it->xlocation << " y: " << it->ylocation << "\n";
+		if (player->color_mesh[it->xlocation][it->ylocation] == 1) {
+			offset[0] = sign(player->xlocation - it->xlocation);
+			offset[1] = sign(player->ylocation - it->ylocation);
+
+			cout << "offset: [" << offset[0] << ", " << offset[1] << "]\n";
+			if (chars.find(terrainmesh[it->currentfloor][it->xlocation + offset[0]][it->xlocation + offset[1]]) == chars.end()) {
+				it->xlocation += offset[0];
+				it->ylocation += offset[1];
 			}
 		}
 	}

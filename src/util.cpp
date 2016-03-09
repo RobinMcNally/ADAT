@@ -15,3 +15,9 @@ int roll_dice(int count, int sides) {
 
 	return sum;
 }
+
+int sign(int tocheck) {
+	if (tocheck < 0) return -1;
+	if (tocheck == 0) return 0;
+	if (tocheck > 0) return 1;
+}

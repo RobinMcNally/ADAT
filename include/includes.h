@@ -10,6 +10,7 @@
 #include <SDL2/SDL.h>
 #include <unistd.h>
 #include "statics.h"
+#include "player.h"
 #include "monster.h"
 #include "util.h"
 #include "world.h"
