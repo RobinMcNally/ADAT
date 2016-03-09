@@ -214,10 +214,8 @@ void render_monsters(SDL_Texture *tex, SDL_Renderer *ren, World *world, Player *
  * This (should) handle all ingame player input (attacks, walking, etc)
  * menus and such will be handled elsewhere
  */
-bool try_action(int action, Player *player) {
-	set<char> chars;
+bool try_action(int action) {
 	int player_offset[2] = {0, 0};
-	chars.insert(IMPASSIBLE_TERRAIN, IMPASSIBLE_TERRAIN + strlen(IMPASSIBLE_TERRAIN));
 
 	switch (action) {
 		case NORTH:
@@ -253,13 +251,13 @@ bool try_action(int action, Player *player) {
 		default:
 			break;
 	}
-	if (chars.find(gameworld.terrainmesh[player->currentfloor][player->xlocation + player_offset[0]][player->ylocation + player_offset[1]]) != chars.end())  {
+	if (gameworld.is_space_free(gameworld.player.currentfloor, gameworld.player.xlocation + player_offset[0], gameworld.player.ylocation + player_offset[1]))  {
+		gameworld.player.xlocation += player_offset[0];
+		gameworld.player.ylocation += player_offset[1];
+		return true;
+	} else {
 		add_to_log(string("Bump!"));
 		return false;
-	} else {
-		player->xlocation += player_offset[0];
-		player->ylocation += player_offset[1];
-		return true;
 	}
 }
 
@@ -269,34 +267,34 @@ bool handle_keypress(Player *player, SDL_Event event) {
 	switch(event.key.keysym.sym) {
 		case SDLK_LEFT:
 		case SDLK_KP_4:
-			return try_action(WEST, player);
+			return try_action(WEST);
 			break;
 		case SDLK_RIGHT:
 		case SDLK_KP_6:
-			return try_action(EAST, player);
+			return try_action(EAST);
 			break;
 		case SDLK_UP:
 		case SDLK_KP_8:
-			return try_action(NORTH, player);
+			return try_action(NORTH);
 			break;
 		case SDLK_DOWN:
 		case SDLK_KP_2:
-			return try_action(SOUTH, player);
+			return try_action(SOUTH);
 			break;
 		case SDLK_KP_9:
-			return try_action(NE, player);
+			return try_action(NE);
 			break;
 		case SDLK_KP_7:
-			return try_action(NW, player);
+			return try_action(NW);
 			break;
 		case SDLK_KP_3:
-			return try_action(SE, player);
+			return try_action(SE);
 			break;
 		case SDLK_KP_1:
-			return try_action(SW, player);
+			return try_action(SW);
 			break;
 		case SDLK_KP_5:
-			return try_action(STILL, player);
+			return try_action(STILL);
 			break;
 		default:
 			return false;
@@ -323,12 +321,6 @@ int main(int, char**){
 
 	gameworld.initialize();
 
-	Player player;
-	player.xlocation = 14;
-	player.ylocation = 14;
-	player.hasmoved = false;
-	player.currentfloor = 0;
-	player.initialize_player_world();
 	int quit = 0;
 
 	while(!quit) {
@@ -337,37 +329,37 @@ int main(int, char**){
 
 
 		//Generate player field of view
-		FOV(&player);
+		FOV(&(gameworld.player));
 
 		render_texture(background, renderer, 0, 0);
 
 		render_game_log(spritesheet, renderer);
-		render_player_world(spritesheet, renderer, &player);
-		render_monsters(spritesheet, renderer, &gameworld, &player);
+		render_player_world(spritesheet, renderer, &(gameworld.player));
+		render_monsters(spritesheet, renderer, &gameworld, &(gameworld.player));
 		//Render player characters
-		render_sprite(spritesheet, renderer, (6 * TILE_SIZE), (5 * TILE_SIZE), (player.xlocation * TILE_SIZE), (player.ylocation * TILE_SIZE));
+		render_sprite(spritesheet, renderer, (6 * TILE_SIZE), (5 * TILE_SIZE), (gameworld.player.xlocation * TILE_SIZE), (gameworld.player.ylocation * TILE_SIZE));
 		SDL_RenderPresent(renderer);
 
 		//Draw the texture
 		while (!SDL_PollEvent(&event)) {};
-		player.hasmoved = false;
+		gameworld.player.hasmoved = false;
 		do {
 			//Handle input
 			switch(event.type) {
 				case SDL_QUIT:
 					quit = 1;
-					player.hasmoved = true;
+					gameworld.player.hasmoved = true;
 					break;
 				case SDL_KEYDOWN:
-					player.hasmoved = handle_keypress(&player, event);
+					gameworld.player.hasmoved = handle_keypress(&(gameworld.player), event);
 					break;
 				default:
 					break;
 			}
 		} while (SDL_PollEvent(&event));
 
-		if (player.hasmoved) {
-			gameworld.monsters_turn(&player);
+		if (gameworld.player.hasmoved) {
+			gameworld.monsters_turn();
 		}
 	}
 

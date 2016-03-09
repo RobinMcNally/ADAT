@@ -17,6 +17,11 @@ void World::initialize() {
 		}
 	}
 	place_monsters();
+	player.xlocation = 14;
+	player.ylocation = 14;
+	player.hasmoved = false;
+	player.currentfloor = 0;
+	player.initialize_player_world();
 }
 
 /* Subfunction for read_world
@@ -133,20 +138,32 @@ void World::place_monsters() {
 	}
 }
 
-void World::monsters_turn(Player *player) {
+bool World::is_space_free(int currentfloor, int xpos, int ypos) {
 	set<char> chars;
 	chars.insert(IMPASSIBLE_TERRAIN, IMPASSIBLE_TERRAIN + strlen(IMPASSIBLE_TERRAIN));
+
+	bool terrainfree = (chars.find(terrainmesh[currentfloor][xpos][ypos]) == chars.end());
+	bool monstersfree = true;
+	for (vector<Monster>::iterator it = monsters.begin(); it != monsters.end(); it++) {
+		if (it->xlocation == xpos && it->ylocation == ypos) monstersfree = false;
+	}
+	bool playerfree = !(player.xlocation == xpos && player.ylocation == ypos);
+
+	return (terrainfree && monstersfree && playerfree);
+}
+
+void World::monsters_turn() {
 	int offset[2] = {0};
 
 	for (vector<Monster>::iterator it = monsters.begin(); it != monsters.end(); it++) {
 		//Only move if the player can see us for now
 		//Also, this is the worst approach to pathfinding ever and I need to
 		//replace it
-		if (player->color_mesh[it->xlocation][it->ylocation] == 1) {
-			offset[0] = sign(player->xlocation - it->xlocation);
-			offset[1] = sign(player->ylocation - it->ylocation);
+		if (player.color_mesh[it->xlocation][it->ylocation] == 1) {
+			offset[0] = sign(player.xlocation - it->xlocation);
+			offset[1] = sign(player.ylocation - it->ylocation);
 
-			if (chars.find(terrainmesh[it->currentfloor][it->xlocation + offset[0]][it->ylocation + offset[1]]) == chars.end()) {
+			if (is_space_free(it->currentfloor, it->xlocation + offset[0], it->ylocation + offset[1])) {
 				it->xlocation += offset[0];
 				it->ylocation += offset[1];
 			}
