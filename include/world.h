@@ -1,8 +1,6 @@
 #ifndef WORLD_H
 #define WORLD_H
 
-using namespace std;
-
 class Player;
 class Monster;
 
@@ -24,6 +22,7 @@ public:
 	Monster* get_monster(int currentfloor, int xpos, int ypos);
 	void place_monsters();
 	void monsters_turn();
+	void dust_up();
 
 };
 

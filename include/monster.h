@@ -6,10 +6,12 @@ class Player;
 class Monster {
 public:
 	Monster(int type, int towerlevel);
+	string name;
 	int health;
 	int maxhealth;
 	int tohit;
 	int damage;
+	int defense;
 	int challengerating;
 	int xlocation;
 	int ylocation;

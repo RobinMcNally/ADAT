@@ -7,7 +7,9 @@ Monster::Monster(int type, int towerlevel) {
 	health = maxhealth;
 	damage = roll_dice(1, 3);
 	tohit = roll_dice(1, 3);
+	defense = roll_dice(1, 3);
 	challengerating = 1;
+	name = "goblin";
 	displaycharacter = 'g';
 	currentfloor = towerlevel;
 }

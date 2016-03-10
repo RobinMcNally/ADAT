@@ -1,8 +1,6 @@
 #include "../include/includes.h"
 #include "../include/cleanup.h"
 
-using namespace std;
-
 vector<string> logoutput;
 
 World gameworld;
@@ -66,9 +64,21 @@ void render_sprite(SDL_Texture *tex, SDL_Renderer *ren, int srcx, int srcy, int 
 	SDL_RenderCopy(ren, tex, &source, &destination);
 }
 
-//Write out a message to the ingame user in the text output
-void add_to_log(string message) {
-	logoutput.push_back(message);
+void render_log_character(SDL_Texture *tex, SDL_Renderer *ren, char torender, int line, int line_pos) {
+	int location;
+
+	if(isupper(torender)) {
+		// 65 is ascii code for 'A'
+		location = torender - 65;
+		render_sprite(tex, ren, location * TILE_SIZE + UPPER_CHAR_START, 0, LOG_LOWER_LEFT[0] * TILE_SIZE + (line_pos * TILE_SIZE), LOG_LOWER_LEFT[1] * TILE_SIZE - (line * TILE_SIZE));
+	} else if (islower(torender))  {
+		// 97 is ascii code for 'a'
+		location = torender - 97;
+		render_sprite(tex, ren, location * TILE_SIZE + LOWER_CHAR_START, 0, LOG_LOWER_LEFT[0] * TILE_SIZE + (line_pos * TILE_SIZE), LOG_LOWER_LEFT[1] * TILE_SIZE - (line * TILE_SIZE));
+	} else if (isdigit(torender)) {
+		location = torender - 48;
+		render_sprite(tex, ren, location * TILE_SIZE + NUMBER_START, 0, LOG_LOWER_LEFT[0] * TILE_SIZE + (line_pos * TILE_SIZE), LOG_LOWER_LEFT[1] * TILE_SIZE - (line * TILE_SIZE));
+	}
 }
 
 /* Display function for the in game log
@@ -80,33 +90,42 @@ void add_to_log(string message) {
 void render_game_log(SDL_Texture *tex, SDL_Renderer *ren) {
 	int line = 0;
 	int current_line_position = 0;
-	int location;
+	string sub;
+	vector<string> linestring;
 
 	//Get a reverse iterator and loop through the vector from end to beginning
 	for (vector<string>::reverse_iterator rit = logoutput.rbegin(); rit != logoutput.rend(); ++rit) {
 		//If the line we are on is higher than the top of the log stop
 		if (line > LOG_LINE_COUNT) break;
-		if ((*rit).size() > (uint)LOG_LINE_LENGTH) {
+		if (rit->size() > (uint)LOG_LINE_LENGTH) {
+			linestring.clear();
 			//Handle multiline comment later
+			for (size_t i = 0; i < rit->size(); i += LOG_LINE_LENGTH) {
+
+				linestring.push_back(rit->substr(i, LOG_LINE_LENGTH));
+
+			}
+			for (vector<string>::reverse_iterator crit = linestring.rbegin(); crit != linestring.rend(); ++crit) {
+				// Determine the case of the character and print its related
+				// sprite to the screen
+				current_line_position = 0;
+				for (string::iterator sit = crit->begin(); sit != crit->end(); ++sit) {
+					// Determine the case of the character and print its related
+					// sprite to the screen
+					render_log_character(tex, ren, *sit, line, current_line_position++);
+				}
+				line++;
+			}
 		} else {
 			current_line_position = 0;
 			//Get an iterator to the string
-			for (string::iterator sit = (*rit).begin(); sit != (*rit).end(); ++sit) {
+			for (string::iterator sit = rit->begin(); sit != rit->end(); ++sit) {
 				// Determine the case of the character and print its related
 				// sprite to the screen
-				if(isupper(*sit)) {
-					// 65 is ascii code for 'A'
-					location = *sit - 65;
-					render_sprite(tex, ren, location * TILE_SIZE + UPPER_CHAR_START, 0, LOG_LOWER_LEFT[0] * TILE_SIZE + (current_line_position++ * TILE_SIZE), LOG_LOWER_LEFT[1] * TILE_SIZE - (line * TILE_SIZE));
-				} else if (islower(*sit))  {
-					// 97 is ascii code for 'a'
-					location = *sit - 97;
-					render_sprite(tex, ren, location * TILE_SIZE + LOWER_CHAR_START, 0, LOG_LOWER_LEFT[0] * TILE_SIZE + (current_line_position++ * TILE_SIZE), LOG_LOWER_LEFT[1] * TILE_SIZE - (line * TILE_SIZE));
-				}
-				//Only characters for now
+				render_log_character(tex, ren, *sit, line, current_line_position++);
 			}
+			line++;
 		}
-		line++;
 	}
 }
 
@@ -387,6 +406,7 @@ int main(int, char**){
 		if (gameworld.player->hasmoved) {
 			gameworld.monsters_turn();
 		}
+		gameworld.dust_up();
 	}
 
 	cleanup(renderer, window, background);

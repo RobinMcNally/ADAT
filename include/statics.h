@@ -19,6 +19,7 @@ static const int LOG_LOWER_LEFT[2] = {61, 58};
 
 static const int UPPER_CHAR_START = 0;
 static const int LOWER_CHAR_START = 364;
+static const int NUMBER_START = 770;
 
 static const int DARK_SPRITE_Y_START = 56;
 static const int LIGHT_SPRITE_Y_START = 70;
@@ -38,8 +39,7 @@ static const int PLAYER_START_STAMINA = 5;
 
 static const int PLAYER_START_STATS = 5;
 
-static char const* IMPASSIBLE_TERRAIN = "=#+";
-
+static const char* IMPASSIBLE_TERRAIN = "=#+";
 
 enum monsters : int {
 	GOBLIN = 0

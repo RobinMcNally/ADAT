@@ -168,6 +168,17 @@ void World::monsters_turn() {
 	}
 }
 
+void World::dust_up() {
+	for (vector<Monster>::iterator it = monsters.begin(); it != monsters.end(); it++) {
+		if (it->health < 0) {
+			ostringstream oss;
+			oss << "The " << it->name << " has died!";
+			add_to_log(oss.str());
+			monsters.erase(it);
+		}
+	}
+}
+
 bool World::is_monster(int currentfloor, int xpos, int ypos) {
 	bool ismonster = false;
 	for (vector<Monster>::iterator it = monsters.begin(); it != monsters.end(); it++) {
