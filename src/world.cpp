@@ -138,6 +138,15 @@ void World::place_monsters() {
 	}
 }
 
+bool World::is_vision_blocking(int currentfloor, int xpos, int ypos) {
+	set<char> chars;
+	chars.insert(IMPASSIBLE_TERRAIN, IMPASSIBLE_TERRAIN + strlen(IMPASSIBLE_TERRAIN));
+
+	bool visionblocked = (chars.find(terrainmesh[currentfloor][xpos][ypos]) != chars.end());
+
+	return visionblocked;
+}
+
 bool World::is_space_free(int currentfloor, int xpos, int ypos) {
 	set<char> chars;
 	chars.insert(IMPASSIBLE_TERRAIN, IMPASSIBLE_TERRAIN + strlen(IMPASSIBLE_TERRAIN));

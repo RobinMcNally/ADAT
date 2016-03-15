@@ -16,6 +16,7 @@ public:
 	void skip_level(ifstream *levelfile);
 	string skip_whitespace(ifstream *levelfile);
 	bool is_space_free(int currentfloor, int xpos, int ypos);
+	bool is_vision_blocking(int currentfloor, int xpos, int ypos);
 	bool is_monster(int currentfloor, int xpos, int ypos);
 	bool is_door(int currentfloor, int xpos, int ypos);
 	bool open_door(int currentfloor, int xpos, int ypos);

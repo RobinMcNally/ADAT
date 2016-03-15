@@ -150,7 +150,7 @@ void do_fov(float x,float y, Player *player) {
 		if ((int)oy < 0 || (int)oy > 59) continue;
 		player->world[player->currentfloor][(int)ox][(int)oy] = gameworld.terrainmesh[player->currentfloor][(int)ox][(int)oy];
 		player->color_mesh[(int)ox][(int)oy] = 1;
-		if(gameworld.terrainmesh[player->currentfloor][(int)ox][(int)oy]=='#') return;
+		if(gameworld.is_vision_blocking(player->currentfloor, (int)ox, (int)oy)) return;
 		ox += x;
 		oy += y;
 	};

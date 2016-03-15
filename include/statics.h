@@ -9,7 +9,7 @@ static const int SCREEN_START[2] = {0, 0};
 static const int SCREEN_END[2] = {59, 59};
 static const int SCREEN_CENTER[2] = {(SCREEN_END[0] - SCREEN_START[0]) / 2, (SCREEN_END[1] - SCREEN_START[1]) / 2};
 static const int SCREEN_RADIUS = 30;
-static const int FOV_RADIUS = 5;
+static const int FOV_RADIUS = 8;
 
 static const int TILE_SIZE = 14;
 
