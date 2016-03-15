@@ -17,6 +17,7 @@ public:
 	int ylocation;
 	int currentfloor;
 	char displaycharacter;
+	void attack(Player* target);
 };
 
 class MonsterFactory {

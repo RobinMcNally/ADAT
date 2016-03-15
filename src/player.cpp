@@ -37,8 +37,6 @@ void Player::clear_color_mesh() {
 void Player::attack(Monster* target) {
 	int playerroll = roll_dice(1, 20) + DEX;
 	int monsterroll = roll_dice(1, 20) + target->defense;
-	string message;
-
 
 	if (playerroll >= monsterroll) {
 		target->health -= STR;

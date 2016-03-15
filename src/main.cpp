@@ -231,6 +231,10 @@ void render_monsters(SDL_Texture *tex, SDL_Renderer *ren, World *world, Player *
 	}
 }
 
+void render_player_stats(SDL_Texture *tex, SDL_Renderer *ren, Player *player) {
+	
+}
+
 /* The function that will handle player logic (such as it is)
  *
  * This (should) handle all ingame player input (attacks, walking, etc)

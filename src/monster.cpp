@@ -2,7 +2,6 @@
 
 Monster::Monster(int type, int towerlevel) {
 	srand(time(NULL));
-
 	maxhealth = roll_dice(1, 6);
 	health = maxhealth;
 	damage = roll_dice(1, 3);
@@ -12,6 +11,15 @@ Monster::Monster(int type, int towerlevel) {
 	name = "goblin";
 	displaycharacter = 'g';
 	currentfloor = towerlevel;
+}
+
+void Monster::attack(Player *target) {
+	int playerroll = roll_dice(1, 20) + target->DEX;
+	int monsterroll = roll_dice(1, 20) + tohit;
+
+	if (monsterroll >= playerroll) {
+		target->health -= damage;
+	}
 }
 
 Monster MonsterFactory::make_monster() {

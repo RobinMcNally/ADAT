@@ -186,6 +186,10 @@ void World::dust_up() {
 			monsters.erase(it);
 		}
 	}
+	
+	if (player->health <= 0) {
+		//Draw game over screen
+	}
 }
 
 bool World::is_monster(int currentfloor, int xpos, int ypos) {
